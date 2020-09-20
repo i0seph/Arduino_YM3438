@@ -16,12 +16,12 @@ const int ledChannel = 0;
 const int resolution = 3;
 
 uint8_t cntrlpins[] = {YM_IC, YM_CS, YM_WR, YM_RD, YM_A0, YM_A1};
-uint8_t datapins[] = {9,8,7,6,5,4,3,2};
-
+uint8_t datapins[] = {9,8,7,6,5,4,3,2}; 
 Ym3438 ym3438(cntrlpins, datapins);
 
 Instrument piano;
 Instrument instrument_on_channel[6];
+int current_seq = 0;
 
 #if 0
 void dump_instrument(Instrument inst){
@@ -171,8 +171,7 @@ void loop(void)
   int notenum;
   int vol;
   bool isPlaying[7];
-  for(int j = 0; j < 128; j++){
-    //for(int i=0; i<6;i++) piano = ym3438.setInstrument(i+1, j);
+
   for(int i=0; i<128; i++){
     //Serial.println(i);
     //piano = ym3438.setInstrument(1, i);
@@ -184,14 +183,21 @@ void loop(void)
     ym3438.setLevel(1,4,0);
     */
 
-    randNumber = random(36, 60);
+    randNumber = random(31, 60);
     notenum = randNumber % 12;
     
 
-    if((notenum == 1) || (notenum == 3) || (notenum == 4)  || (notenum == 6) || (notenum == 8) || (notenum == 10) || (notenum == 11)) continue;
+    if((notenum == 1) || (notenum == 3) || (notenum == 5)  || (notenum == 6) || (notenum == 8) || (notenum == 10) || (notenum == 11)) continue;
+    // 0, 2, 4, 7, 9
   
     
     piano = ym3438.setInstrument((i % 6) + 1, random(0, 100));
+    ym3438.setLeft((i % 6) + 1, &piano, (bool)random(0,2));
+    ym3438.setRight((i % 6) + 1, &piano, (bool)random(0,2));
+    if(!piano.enableLeft && !piano.enableRight) {
+      ym3438.setLeft((i % 6) + 1, &piano, 1);
+      ym3438.setLeft((i % 6) + 1, &piano, 1);
+    }
     
     if(isPlaying[(i % 6) + 1]) {
       ym3438.noteOff((i % 6) + 1);
@@ -201,13 +207,18 @@ void loop(void)
       isPlaying[(i % 6) + 1] = false;
     }
     
-    if((i%4) == 0) vol = 127;
+    if((current_seq % 6) == 0) vol = 127;
+    else if((current_seq % 6) == 3) vol = 110;
     else vol = random(60, 95);
+    current_seq += 1;
+    if(current_seq == 6) current_seq = 0;
+    
     ym3438.noteOn((i % 6) + 1, (randNumber / 12) + 1, randNumber % 12, piano, vol);
+    // Serial.print((i % 6));
+    Serial.println(randNumber % 12);
     delay(220);
     //ym3438.noteOff((i % 6) + 1);
     //delay(10);
-  }
   }
 
 }
